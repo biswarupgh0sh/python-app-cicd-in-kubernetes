@@ -76,10 +76,9 @@ jobs:
   failure_notify:
     runs-on: ubuntu-slim
     needs: python-app-deployment
-    if: always() && !failure()
+    if: failure()
     steps:
       - name: Send Slack notification
-        if: failure()
         uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |
