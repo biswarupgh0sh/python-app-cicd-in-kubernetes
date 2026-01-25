@@ -65,7 +65,6 @@ jobs:
     if: always() && !failure()
     steps:
       - name: Send Slack notification
-        if: always() && !failure()
         uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |
@@ -74,7 +73,7 @@ jobs:
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
- failure_notify:
+  failure_notify:
     runs-on: ubuntu-slim
     needs: python-app-deployment
     if: always() && !failure()
