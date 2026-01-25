@@ -31,7 +31,7 @@ jobs:
           exit-code: 1
       - name: Send Slack notification
         if: always()
-        uses: slackapi/slack-github-action@1.26.0
+        uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |
             {
