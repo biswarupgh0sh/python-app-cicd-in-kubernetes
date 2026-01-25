@@ -45,4 +45,47 @@ jobs:
           context: .
           push: true
           tags: biswarup007/python-app:${{ env.SHORT_SHA_KEY }}
-
+      - name: Installing yq
+        uses: mikefarah/yq@v4.44.3
+      - name: Update deployment.yml file
+        run: |
+          # Creating the SHA KEY
+          SHORT_SHA_KEY=${GITHUB_SHA::10}
+          # Update the image tag in the kubernetes deployment yaml file
+          yq -i '.spec.template.spec.containers[0].image = "biswarup007/python-app:'"#SHORT_SHA_KEY"'"' ./k8s/deployment.yml
+      - name: Commiting the changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions@noreply"
+          git commit -am "updated the deployment.yml file by GitHub Actions" || echo "Already commited the changes"
+          git push origin main
+  success_notify:
+    runs-on: ubuntu-slim
+    needs: python-app-deployment
+    if: always() && !failure()
+    steps:
+      - name: Send Slack notification
+        if: always() && !failure()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+            "text": ":white_check_mark: *CI Pipeline Successful!* 🎉\n\n*Repository:* `${{ github.repository }}`\n*Branch:* `${{ github.ref_name }}`\n*Commit:* `<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>`\n*Triggered by:* `${{ github.actor }}`\n\n:docker: Docker image built, scanned & pushed\n:kubernetes: Deployment YAML updated\n\n:rocket: *Ready for ArgoCD sync!*"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+ failure_notify:
+    runs-on: ubuntu-slim
+    needs: python-app-deployment
+    if: always() && !failure()
+    steps:
+      - name: Send Slack notification
+        if: failure()
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+            "text": ":rotating_light: *CI Pipeline FAILED!* :x:\n\n*Repository:* `${{ github.repository }}`\n*Branch:* `${{ github.ref_name }}`\n*Commit:* `<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>`\n*Triggered by:* `${{ github.actor }}`\n\n:warning: One or more steps failed during the pipeline execution.\n\n:mag: *Action Required*\n• Check the GitHub Actions logs\n• Fix the issue and re-run the pipeline\n\n:link: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Logs>"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
