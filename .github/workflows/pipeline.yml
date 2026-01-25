@@ -4,7 +4,7 @@ on:
    branches:
      - main
 
-job:
+jobs:
   python-app-deployment:
     runs-on: ubuntu-latest
     steps:
@@ -16,18 +16,18 @@ job:
         uses: docker/login-action@v3
         with:
           username: "${{ vars.DOCKER_USERNAME }}"
-          password: "${{ secret.DOCKER_PASSWORD }}"
+          password: "${{ secrets.DOCKER_PASSWORD }}"
       - name: Build the docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: false
-          tags: biswarup007/python-app:${{ env.SHORT_SHA }}
+          tags: biswarup007/python-app:${{ env.SHORT_SHA_KEY }}
       - name: Trivy Image Scan
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: biswarup007/python-app:${{ env.SHORT_SHA }}
-          severity: CRITICAL, HIGH
+          image-ref: biswarup007/python-app:${{ env.SHORT_SHA_KEY }}
+          severity: CRITICAL,HIGH
           exit-code: 1
       - name: Send Slack notification
         if: always()
@@ -44,5 +44,5 @@ job:
         with:
           context: .
           push: true
-          tags: biswarup007/python-app:${{ env.SHORT_SHA }}
+          tags: biswarup007/python-app:${{ env.SHORT_SHA_KEY }}
 
