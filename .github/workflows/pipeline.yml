@@ -35,7 +35,7 @@ jobs:
         with:
           payload: |
             {
-          "text": ":rocket: *GitHub Actions Notification*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>"  
+            "text": ":rocket: *GitHub Actions Notification*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>"  
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
