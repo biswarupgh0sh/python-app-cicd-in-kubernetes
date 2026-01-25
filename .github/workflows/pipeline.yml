@@ -27,7 +27,7 @@ jobs:
         uses: aquasecurity/trivy-action@0.24.0
         with:
           image-ref: biswarup007/python-app:${{ env.SHORT_SHA_KEY }}
-          severity: LOW,MEDIUM,HIGH,CRITICAL,UNKNOWN
+          severity: MEDIUM,HIGH,CRITICAL
           exit-code: 0
       - name: Send Slack notification
         if: always()
