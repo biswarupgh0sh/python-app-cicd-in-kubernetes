@@ -1,0 +1,48 @@
+name: Kubernetes CI for ArgoCd using GitHub Actions
+on:
+  push:
+   branches:
+     - main
+
+job:
+  python-app-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checking out the code
+        uses: actions/checkout@v4
+      - name: Setup short SHA for later use
+        run: echo "SHORT_SHA_KEY=${GITHUB_SHA::10}" >> $GITHUB_ENV
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: "${{ vars.DOCKER_USERNAME }}"
+          password: "${{ secret.DOCKER_PASSWORD }}"
+      - name: Build the docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: biswarup007/python-app:${{ env.SHORT_SHA }}
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: biswarup007/python-app:${{ env.SHORT_SHA }}
+          severity: CRITICAL, HIGH
+          exit-code: 1
+      - name: Send Slack notification
+        if: always()
+        uses: slackapi/slack-github-actions@1.26.0
+        with:
+          payload: |
+            {
+          "text": ":rocket: *GitHub Actions Notification*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>"  
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      - name: Pushing the docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: biswarup007/python-app:${{ env.SHORT_SHA }}
+
