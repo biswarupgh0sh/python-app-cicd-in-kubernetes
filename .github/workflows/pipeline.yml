@@ -28,12 +28,14 @@ jobs:
           pip install -r requirements.txt
           pip install jq
       - name: SAST with SonarCloud using SonarQube
-        uses: SonarSource/sonarqube-scan-action@v7.0.0
+        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       - name: Export SonarCloud metrics as JSON
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          curl -u ${{ secrets.SONAR_TOKEN }}: \
+          curl -u "$SONAR_TOKEN:"" \
           "https://sonarcloud.io/api/measures/component?component=${{ env.SONAR_PROJECT_KEY }}&metricKeys=bugs,vulnerabilities,code_smells" \
           -o sonar-report.json
       - name: Parse SonarCloud metrics
