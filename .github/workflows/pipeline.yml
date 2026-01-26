@@ -40,6 +40,10 @@ jobs:
   scan_image:
     needs: build_image
     runs-on: ubuntu-latest
+    outputs:
+      critical: ${{ steps.trivy_metrics.outputs.critical }}
+      high: ${{ steps.trivy_metrics.outputs.high }}
+      medium: ${{ steps.trivy_metrics.outputs.medium }}
     steps:
       - name: Download image artifact
         uses: actions/download-artifact@v4
@@ -63,6 +67,7 @@ jobs:
           HIGH=$(jq '[.Results[].Vulnerabilities[] | select(.Severity=="HIGH")] | length' trivy-report.json)
           echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
           echo "high=$HIGH" >> $GITHUB_OUTPUT
+          echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
 
       - name: Upload Trivy report
         uses: actions/upload-artifact@v4
@@ -79,8 +84,42 @@ jobs:
     with:
       payload: |
         {
-        "text": ":rocket: *GitHub Actions Notification*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>"  
+          "attachments": [
+            {
+              "fallback": "GitHub Actions Notification",
+              "color": "${{ needs.scan_image.outputs.critical != '0' && 'danger' || (needs.scan_image.outputs.high != '0' && 'warning' || 'good') }}",
+              "pretext": ":rocket: *GitHub Actions Notification*",
+              "fields": [
+                {
+                  "title": "Repository",
+                  "value": "${{ github.repository }}",
+                  "short": true
+                },
+                {
+                  "title": "Branch",
+                  "value": "${{ github.ref_name }}",
+                  "short": true
+                },
+                {
+                  "title": "Commit",
+                  "value": "<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>",
+                  "short": false
+                },
+                {
+                  "title": "Trivy Scan Metrics",
+                  "value": "• *CRITICAL*: ${{ needs.scan_image.outputs.critical }}\n• *HIGH*: ${{ needs.scan_image.outputs.high }}\n• *MEDIUM*: ${{ needs.scan_image.outputs.medium }}",
+                  "short": false
+                }
+              ],
+              "footer": "GitHub Actions",
+              "ts": ${{ github.run_id }}
+            }
+          ]
         }
+      # payload: |
+      #   {
+      #   "text": ":rocket: *GitHub Actions Notification*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>"  
+      #   }
   pushing_image_to_docker_hub:
     name: Pushing the image to docker hub
     needs: ['sending_slack_notitification', 'build_image']
