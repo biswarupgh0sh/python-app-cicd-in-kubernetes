@@ -9,7 +9,7 @@ env:
      
 jobs:
   sonar_scan:
-    name: SonarCloud Scan
+    name: SonarCloud SAST Scan
     runs-on: ubuntu-latest
     outputs:
       bugs: ${{ steps.sonar_metrics.outputs.bugs }}
@@ -87,6 +87,7 @@ jobs:
             name: python-app-image
             path: python-app.tar
   scan_image:
+    name: Scan the image with Trivy
     needs: build_image
     runs-on: ubuntu-latest
     outputs:
@@ -202,6 +203,7 @@ jobs:
           git commit -am "updated the deployment.yml file by GitHub Actions" || echo "Already commited the changes"
           git push origin main      
   success_notify:
+    name: Sending pipeline success notification
     uses: ./.github/workflows/reusable-slack-notification.yml
     needs: ['sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
     if: always() && !failure()
@@ -213,6 +215,7 @@ jobs:
         "text": ":white_check_mark: *CI Pipeline Successful!* 🎉\n\n*Repository:* `${{ github.repository }}`\n*Branch:* `${{ github.ref_name }}`\n*Commit:* `<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>`\n*Triggered by:* `${{ github.actor }}`\n\n:docker: Docker image built, scanned & pushed\n:kubernetes: Deployment YAML updated\n\n:rocket: *Ready for ArgoCD sync!*"
         }
   failure_notify:
+    name: Sending pipeline failure notification
     uses: ./.github/workflows/reusable-slack-notification.yml
     needs: ['sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
     if: failure()
