@@ -84,39 +84,29 @@ jobs:
     with:
       payload: |
         {
-        "text": "GitHub Actions Notification: Trivy scan results",
-        "attachments": [
-          {
-            "fallback": "GitHub Actions Notification",
-            "color": "${{ needs.scan_image.outputs.critical != '0' && 'danger' || (needs.scan_image.outputs.high != '0' && 'warning' || 'good') }}",
-            "pretext": ":rocket: *GitHub Actions Notification*",
-            "fields": [
-              {
-                "title": "Repository",
-                "value": "${{ github.repository }}",
-                "short": true
-              },
-              {
-                "title": "Branch",
-                "value": "${{ github.ref_name }}",
-                "short": true
-              },
-              {
-                "title": "Commit",
-                "value": "<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>",
-                "short": false
-              },
-              {
-                "title": "Trivy Scan Metrics",
-                "value": "• *CRITICAL*: ${{ needs.scan_image.outputs.critical }}\\n• *HIGH*: ${{ needs.scan_image.outputs.high }}\\n• *MEDIUM*: ${{ needs.scan_image.outputs.medium }}",
-                "short": false
-              }
-            ],
-            "footer": "GitHub Actions",
-            "ts": ${{ github.run_id }}
+        text : "GitHub Actions Notification: Trivy scan results",
+        blocks:
+          - type: section
+              text:
+                type: mrkdwn
+                  text: ":rocket: *GitHub Actions Notification*"
+          - type: section
+            fields:
+              - type: mrkdwn
+                text: "*Repository:*\n${{ github.repository }}"
+              - type: mrkdwn
+                text: "*Branch:*\n${{ github.ref_name }}"
+              - type: mrkdwn
+                text: "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>"
+          - type: section
+            fields:
+              - type: mrkdwn
+                text: "*CRITICAL:*\n${{ needs.scan_image.outputs.critical }}"
+              - type: mrkdwn
+                text: "*HIGH:*\n${{ needs.scan_image.outputs.high }}"
+              - type: mrkdwn
+                text: "*MEDIUM:*\n${{ needs.scan_image.outputs.medium }}"
           }
-        ]
-        }
   pushing_image_to_docker_hub:
     name: Pushing the image to docker hub
     needs: ['sending_slack_notitification', 'build_image']
