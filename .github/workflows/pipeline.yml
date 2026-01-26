@@ -54,6 +54,8 @@ jobs:
           image-ref: biswarup007/python-app:${{ needs.build_image.outputs.short_sha }}
           severity: MEDIUM,HIGH,CRITICAL
           exit-code: 0
+          format: json
+          output: trivy-report.json
       - name: Parse Trivy metrics
         id: trivy_metrics
         run: |
