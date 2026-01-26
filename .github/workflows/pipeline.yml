@@ -86,9 +86,9 @@ jobs:
         text : "GitHub Actions Notification: Trivy scan results"
         blocks:
           - type: section
-              text:
-                type: mrkdwn
-                  text: ":rocket: *GitHub Actions Notification*"
+            text:
+              type: mrkdwn
+              text: ":rocket: *GitHub Actions Notification*"
           - type: section
             fields:
               - type: mrkdwn
