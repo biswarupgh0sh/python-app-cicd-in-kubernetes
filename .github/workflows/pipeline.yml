@@ -5,17 +5,15 @@ on:
      - main
 
 jobs:
-  build_and_scan_image:
+  build_scan_and_push_the_image:
     name: Build the docker image and scan with trivy
     runs-on: ubuntu-latest
-    outputs:
-      short_sha: ${{ steps.sha.outputs.short_sha }}
     steps:
       - name: Checking out the code
         uses: actions/checkout@v4
       - name: Setup short SHA for later use
         id: sha 
-        run: echo "short_sha=${GITHUB_SHA::10}" >> $GITHUB_OUTPUT
+        run: echo "SHORT_SHA=${GITHUB_SHA::10}" >> $GITHUB_ENV
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -26,32 +24,22 @@ jobs:
         with:
           context: .
           push: false
-          tags: biswarup007/python-app:${{ steps.sha.outputs.short_sha }}
+          tags: biswarup007/python-app:${{ env.SHORT_SHA }}
       - name: Trivy Image Scan
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: biswarup007/python-app:${{ steps.sha.outputs.short_sha }}
+          image-ref: biswarup007/python-app:${{ env.SHORT_SHA }}
           severity: MEDIUM,HIGH,CRITICAL
           exit-code: 0
-  pushing_image_to_docker_hub:
-    name: Pushing the image to docker hub
-    needs: build_and_scan_image
-    runs-on: ubuntu-latest
-    steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: "${{ vars.DOCKER_USERNAME }}"
-          password: "${{ secrets.DOCKER_PASSWORD }}"
       - name: Pushing the docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: biswarup007/python-app:${{ needs.build_and_scan_image.outputs.short_sha }}
+          tags: biswarup007/python-app:${{ env.SHORT_SHA }}
   sending_slack_notitification:
     name: Sending notification
-    needs: pushing_image_to_docker_hub
+    needs: build_scan_and_push_the_image
     uses: ./.github/workflows/reusable-slack-notification.yml
     if: always()
     secrets:
@@ -63,7 +51,7 @@ jobs:
         }
   changing_the_kubernetes_deployment:
     name: Changing the kubernetes deployment file
-    needs: pushing_image_to_docker_hub
+    needs: sending_slack_notitification
     runs-on: ubuntu-latest
     steps:
       - name: Installing yq
@@ -87,7 +75,7 @@ jobs:
           git push origin main
   success_notify:
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['build_and_scan_image', 'sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment', 'commiting_to_github']
+    needs: ['build_scan_and_push_the_image', 'sending_slack_notitification', 'changing_the_kubernetes_deployment', 'commiting_to_github']
     if: always() && !failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -98,7 +86,7 @@ jobs:
         }
   failure_notify:
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['build_and_scan_image', 'sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment', 'commiting_to_github']
+    needs: ['build_scan_and_push_the_image', 'sending_slack_notitification', 'changing_the_kubernetes_deployment', 'commiting_to_github']
     if: failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
