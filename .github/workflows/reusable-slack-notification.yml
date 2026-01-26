@@ -1,0 +1,21 @@
+name: Reusable slack notification
+on:
+  workflow_call: 
+    inputs:
+      payload:
+        description: "Slack message payload JSON(String)"
+        required: true
+        type: string
+    secrets:
+      SLACK_WEBHOOK_URL:
+        required: true
+jobs:
+  notify:
+    runs-on: ubuntu-slim # This is latest ubuntu container with 1vCpu and 5GBs of RAM
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: ${{ inputs.payload }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

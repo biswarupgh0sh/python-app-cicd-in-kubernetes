@@ -5,13 +5,17 @@ on:
      - main
 
 jobs:
-  python-app-deployment:
+  build_image:
+    name: Build the docker image
     runs-on: ubuntu-latest
+    outputs:
+      short_sha: ${{ steps.sha.outputs.SHORT_SHA_KEY }}
     steps:
       - name: Checking out the code
         uses: actions/checkout@v4
       - name: Setup short SHA for later use
-        run: echo "SHORT_SHA_KEY=${GITHUB_SHA::10}" >> $GITHUB_ENV
+        id: sha 
+        run: echo "SHORT_SHA_KEY=${GITHUB_SHA::10}" >> $GITHUB_OUTPUT
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -22,29 +26,46 @@ jobs:
         with:
           context: .
           push: false
-          tags: biswarup007/python-app:${{ env.SHORT_SHA_KEY }}
+          tags: biswarup007/python-app:${{ steps.sha.outputs.SHORT_SHA_KEY }}
+  scan_image:
+    name: Scan the docker image with trivy
+    runs-on: ubuntu-latest
+    needs: build_image
+    steps:
       - name: Trivy Image Scan
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: biswarup007/python-app:${{ env.SHORT_SHA_KEY }}
+          image-ref: biswarup007/python-app:${{ needs.build_image.outputs.short_sha }}
           severity: MEDIUM,HIGH,CRITICAL
           exit-code: 0
-      - name: Send Slack notification
-        if: always()
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: |
-            {
-            "text": ":rocket: *GitHub Actions Notification*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>"  
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  sending_slack_notitification:
+    name: Sending notification
+    needs: scan_image
+    uses: ./.github/workflows/reusable-slack-notification.yml
+    if: always()
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    with:
+      payload: |
+        {
+        "text": ":rocket: *GitHub Actions Notification*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>"  
+        }
+  pushing_image_to_docker_hub:
+    name: Pushing the immage to docker hub
+    needs: sending_slack_notitification
+    runs-on: ubuntu-latest
+    steps:
       - name: Pushing the docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: biswarup007/python-app:${{ env.SHORT_SHA_KEY }}
+          tags: biswarup007/python-app:${{ needs.build_image.outputs.short_sha }}
+  changing_the_kubernetes_deployment:
+    name: Changing the kubernetes deployment file
+    needs: pushing_image_to_docker_hub
+    runs-on: ubuntu-latest
+    steps:
       - name: Installing yq
         uses: mikefarah/yq@v4.44.3
       - name: Update deployment.yml file
@@ -53,6 +74,11 @@ jobs:
           SHORT_SHA_KEY=${GITHUB_SHA::10}
           # Update the image tag in the kubernetes deployment yaml file
           yq -i '.spec.template.spec.containers[0].image = "biswarup007/python-app:'"$SHORT_SHA_KEY"'"' ./k8s/deployment.yml
+  commiting_to_github:
+    name: Commiting to github for ArgoCd
+    needs: changing_the_kubernetes_deployment
+    runs-on: ubuntu-latest
+    steps:
       - name: Commiting the changes
         run: |
           git config user.name "github-actions[bot]"
@@ -60,30 +86,24 @@ jobs:
           git commit -am "updated the deployment.yml file by GitHub Actions" || echo "Already commited the changes"
           git push origin main
   success_notify:
-    runs-on: ubuntu-slim
-    needs: python-app-deployment
+    uses: ./.github/workflows/reusable-slack-notification.yml
+    needs: ['build_image', 'scan_image', 'sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment', 'commiting_to_github']
     if: always() && !failure()
-    steps:
-      - name: Send Slack notification
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: |
-            {
-            "text": ":white_check_mark: *CI Pipeline Successful!* 🎉\n\n*Repository:* `${{ github.repository }}`\n*Branch:* `${{ github.ref_name }}`\n*Commit:* `<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>`\n*Triggered by:* `${{ github.actor }}`\n\n:docker: Docker image built, scanned & pushed\n:kubernetes: Deployment YAML updated\n\n:rocket: *Ready for ArgoCD sync!*"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    with:
+      payload: |
+        {
+        "text": ":white_check_mark: *CI Pipeline Successful!* 🎉\n\n*Repository:* `${{ github.repository }}`\n*Branch:* `${{ github.ref_name }}`\n*Commit:* `<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>`\n*Triggered by:* `${{ github.actor }}`\n\n:docker: Docker image built, scanned & pushed\n:kubernetes: Deployment YAML updated\n\n:rocket: *Ready for ArgoCD sync!*"
+        }
   failure_notify:
-    runs-on: ubuntu-slim
-    needs: python-app-deployment
+    uses: ./.github/workflows/reusable-slack-notification.yml
+    needs: ['build_image', 'scan_image', 'sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment', 'commiting_to_github']
     if: failure()
-    steps:
-      - name: Send Slack notification
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: |
-            {
-            "text": ":rotating_light: *CI Pipeline FAILED!* :x:\n\n*Repository:* `${{ github.repository }}`\n*Branch:* `${{ github.ref_name }}`\n*Commit:* `<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>`\n*Triggered by:* `${{ github.actor }}`\n\n:warning: One or more steps failed during the pipeline execution.\n\n:mag: *Action Required*\n• Check the GitHub Actions logs\n• Fix the issue and re-run the pipeline\n\n:link: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Logs>"
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    with:
+      payload: |
+        {
+        "text": ":rotating_light: *CI Pipeline FAILED!* :x:\n\n*Repository:* `${{ github.repository }}`\n*Branch:* `${{ github.ref_name }}`\n*Commit:* `<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>`\n*Triggered by:* `${{ github.actor }}`\n\n:warning: One or more steps failed during the pipeline execution.\n\n:mag: *Action Required*\n• Check the GitHub Actions logs\n• Fix the issue and re-run the pipeline\n\n:link: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Logs>"
+        }
