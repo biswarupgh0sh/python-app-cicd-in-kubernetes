@@ -41,7 +41,7 @@ jobs:
           echo "code_smells=$CODE_SMELLS" >> $GITHUB_OUTPUT
 
       - name: Upload SonarCloud report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sonar-report
           path: sonar-report.json
