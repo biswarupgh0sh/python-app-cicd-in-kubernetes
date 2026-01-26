@@ -5,7 +5,7 @@ on:
      - main
 
 jobs:
-  build_scan_and_push_the_image:
+  build_and_scan_image:
     name: Build the docker image and scan with trivy
     runs-on: ubuntu-latest
     outputs:
@@ -36,7 +36,7 @@ jobs:
           exit-code: 0
   sending_slack_notitification:
     name: Sending notification
-    needs: build_scan_and_push_the_image
+    needs: build_and_scan_image
     uses: ./.github/workflows/reusable-slack-notification.yml
     if: always()
     secrets:
@@ -61,7 +61,7 @@ jobs:
           tags: biswarup007/python-app:${{ needs.build_and_scan_image.outputs.short_sha }}
   changing_the_kubernetes_deployment_and_commit:
     name: Changing the kubernetes deployment file
-    needs: sending_slack_notitification
+    needs: pushing_image_to_docker_hub
     runs-on: ubuntu-latest
     steps:
       - name: Checking out the code
@@ -82,7 +82,7 @@ jobs:
           git push origin main      
   success_notify:
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['build_scan_and_push_the_image', 'sending_slack_notitification', 'changing_the_kubernetes_deployment_and_commit']
+    needs: ['build_and_scan_image', 'sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
     if: always() && !failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -93,7 +93,7 @@ jobs:
         }
   failure_notify:
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['build_scan_and_push_the_image', 'sending_slack_notitification', 'changing_the_kubernetes_deployment_and_commit']
+    needs: ['build_and_scan_image', 'sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
     if: failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
