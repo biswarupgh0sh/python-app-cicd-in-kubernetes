@@ -5,9 +5,29 @@ on:
      - main
 
 jobs:
+  sonar_scan:
+    name: SonarCloud Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install sonar-scanner jq
+      - name: Official SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v7.0.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   build_image:
     name: Build the docker image and save in artifacts
     runs-on: ubuntu-latest
+    needs: sonar_scan
     outputs:
       short_sha: ${{ steps.sha.outputs.SHORT_SHA }}
     steps:
@@ -154,7 +174,7 @@ jobs:
           git push origin main      
   success_notify:
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
+    needs: ['sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
     if: always() && !failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -165,7 +185,7 @@ jobs:
         }
   failure_notify:
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
+    needs: ['sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
     if: failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
