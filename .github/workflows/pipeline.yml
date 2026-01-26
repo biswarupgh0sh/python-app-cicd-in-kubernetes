@@ -83,7 +83,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     with:
       payload: |
-        text : "GitHub Actions Notification: Trivy scan results",
+        text : "GitHub Actions Notification: Trivy scan results"
         blocks:
           - type: section
               text:
