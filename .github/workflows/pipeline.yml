@@ -50,6 +50,9 @@ jobs:
     needs: sending_slack_notitification
     runs-on: ubuntu-latest
     steps:
+      - name: Setup short SHA for later use
+        id: sha 
+        run: echo "SHA=${GITHUB_SHA::10}" >> $GITHUB_ENV
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
@@ -60,7 +63,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: biswarup007/python-app:${GITHUB_SHA::10}
+          tags: biswarup007/python-app:${{ env.SHA }}
   changing_the_kubernetes_deployment:
     name: Changing the kubernetes deployment file
     needs: pushing_image_to_docker_hub
