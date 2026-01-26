@@ -5,7 +5,7 @@ on:
      - main
 
 jobs:
-  build_and_scan_image:
+  build_image:
     name: Build the docker image and scan with trivy
     runs-on: ubuntu-latest
     outputs:
@@ -34,9 +34,21 @@ jobs:
           image-ref: biswarup007/python-app:${{ steps.sha.outputs.SHORT_SHA }}
           severity: MEDIUM,HIGH,CRITICAL
           exit-code: 0
+  scan_image:
+    name: Scanning the image with trivy
+    runs-on: ubuntu-latest
+    needs: build_image
+    steps:
+      - name: Checking out the code
+        uses: actions/checkout@v4
+      - name: Trivy Image Scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: biswarup007/python-app:${{ needs.build_and_scan_image.outputs.short_sha }}
+          severity: MEDIUM,HIGH,CRITICAL
   sending_slack_notitification:
     name: Sending notification
-    needs: build_and_scan_image
+    needs: scan_image
     uses: ./.github/workflows/reusable-slack-notification.yml
     if: always()
     secrets:
@@ -48,7 +60,7 @@ jobs:
         }
   pushing_image_to_docker_hub:
     name: Pushing the image to docker hub
-    needs: ['sending_slack_notitification', 'build_and_scan_image']
+    needs: ['sending_slack_notitification', 'build_image']
     runs-on: ubuntu-latest
     steps:
       - name: Checking out the code
@@ -87,7 +99,7 @@ jobs:
           git push origin main      
   success_notify:
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['build_and_scan_image', 'sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
+    needs: ['build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
     if: always() && !failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -98,7 +110,7 @@ jobs:
         }
   failure_notify:
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['build_and_scan_image', 'sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
+    needs: ['build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
     if: failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
