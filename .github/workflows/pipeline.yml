@@ -55,7 +55,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: biswarup007/python-app:${{ needs.build_image.outputs.short_sha }}
+          tags: biswarup007/python-app:${{ needs.build_and_scan_image.outputs.short_sha }}
   changing_the_kubernetes_deployment:
     name: Changing the kubernetes deployment file
     needs: pushing_image_to_docker_hub
