@@ -3,6 +3,7 @@ on:
   push:
    branches:
      - main
+     
 jobs:
   sonar_scan:
     name: SonarCloud Scan
