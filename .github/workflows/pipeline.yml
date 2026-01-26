@@ -102,20 +102,20 @@ jobs:
                 "short": true
               },
               {
-              " title": "Commit",
+                "title": "Commit",
                 "value": "<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>",
                 "short": false
               },
               {
                 "title": "Trivy Scan Metrics",
-                "value": "• *CRITICAL*: ${{ needs.scan_image.outputs.critical }}\n• *HIGH*: ${{ needs.scan_image.outputs.high }}\n• *MEDIUM*: ${{ needs.scan_image.outputs.medium }}",
+                "value": "• *CRITICAL*: ${{ needs.scan_image.outputs.critical }}\\n• *HIGH*: ${{ needs.scan_image.outputs.high }}\\n• *MEDIUM*: ${{ needs.scan_image.outputs.medium }}",
                 "short": false
               }
             ],
             "footer": "GitHub Actions",
             "ts": ${{ github.run_id }}
-            }
-          ]
+          }
+        ]
         }
   pushing_image_to_docker_hub:
     name: Pushing the image to docker hub
