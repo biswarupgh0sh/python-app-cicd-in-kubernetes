@@ -35,7 +35,7 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          curl -u "$SONAR_TOKEN:"" \
+          curl -u "$SONAR_TOKEN:" \
           "https://sonarcloud.io/api/measures/component?component=${{ env.SONAR_PROJECT_KEY }}&metricKeys=bugs,vulnerabilities,code_smells" \
           -o sonar-report.json
       - name: Parse SonarCloud metrics
