@@ -24,6 +24,28 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v7.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Export SonarCloud metrics as JSON
+        run: |
+          curl -u ${{ secrets.SONAR_TOKEN }}: \
+          "https://sonarcloud.io/api/measures/component?component=${{ env.SONAR_PROJECT_KEY }}&metricKeys=bugs,vulnerabilities,code_smells" \
+          -o sonar-report.json
+
+      - name: Parse SonarCloud metrics
+        id: sonar_metrics
+        run: |
+          BUGS=$(jq '.component.measures[] | select(.metric=="bugs") | .value' sonar-report.json)
+          VULNERABILITIES=$(jq '.component.measures[] | select(.metric=="vulnerabilities") | .value' sonar-report.json)
+          CODE_SMELLS=$(jq '.component.measures[] | select(.metric=="code_smells") | .value' sonar-report.json)
+          echo "bugs=$BUGS" >> $GITHUB_OUTPUT
+          echo "vulnerabilities=$VULNERABILITIES" >> $GITHUB_OUTPUT
+          echo "code_smells=$CODE_SMELLS" >> $GITHUB_OUTPUT
+
+      - name: Upload SonarCloud report
+        uses: actions/upload-artifact@v3
+        with:
+          name: sonar-report
+          path: sonar-report.json
+
   build_image:
     name: Build the docker image and save in artifacts
     runs-on: ubuntu-latest
