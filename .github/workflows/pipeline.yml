@@ -83,7 +83,6 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     with:
       payload: |
-        {
         text : "GitHub Actions Notification: Trivy scan results",
         blocks:
           - type: section
@@ -106,7 +105,6 @@ jobs:
                 text: "*HIGH:*\n${{ needs.scan_image.outputs.high }}"
               - type: mrkdwn
                 text: "*MEDIUM:*\n${{ needs.scan_image.outputs.medium }}"
-          }
   pushing_image_to_docker_hub:
     name: Pushing the image to docker hub
     needs: ['sending_slack_notitification', 'build_image']
