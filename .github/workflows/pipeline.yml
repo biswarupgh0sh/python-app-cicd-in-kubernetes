@@ -126,7 +126,7 @@ jobs:
     name: Sending notification
     needs: ['sonar_scan','build_image','scan_image']
     uses: ./.github/workflows/reusable-slack-notification.yml
-    if: always()
+    if: always() && !failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     with:
