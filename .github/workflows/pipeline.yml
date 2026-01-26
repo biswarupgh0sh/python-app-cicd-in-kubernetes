@@ -50,7 +50,7 @@ jobs:
         {
         "text": ":rocket: *GitHub Actions Notification*\nRepository: ${{ github.repository }}\nBranch: ${{ github.ref_name }}\nCommit: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>"  
         }
-  changing_the_kubernetes_deployment:
+  changing_the_kubernetes_deployment_and_commit:
     name: Changing the kubernetes deployment file
     needs: sending_slack_notitification
     runs-on: ubuntu-latest
@@ -65,20 +65,15 @@ jobs:
           SHORT_SHA_KEY=${GITHUB_SHA::10}
           # Update the image tag in the kubernetes deployment yaml file
           yq -i '.spec.template.spec.containers[0].image = "biswarup007/python-app:'"$SHORT_SHA_KEY"'"' ./k8s/deployment.yml
-  commiting_to_github:
-    name: Commiting to github for ArgoCd
-    needs: changing_the_kubernetes_deployment
-    runs-on: ubuntu-latest
-    steps:
       - name: Commiting the changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions@noreply"
           git commit -am "updated the deployment.yml file by GitHub Actions" || echo "Already commited the changes"
-          git push origin main
+          git push origin main      
   success_notify:
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['build_scan_and_push_the_image', 'sending_slack_notitification', 'changing_the_kubernetes_deployment', 'commiting_to_github']
+    needs: ['build_scan_and_push_the_image', 'sending_slack_notitification', 'changing_the_kubernetes_deployment_and_commit']
     if: always() && !failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -89,7 +84,7 @@ jobs:
         }
   failure_notify:
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['build_scan_and_push_the_image', 'sending_slack_notitification', 'changing_the_kubernetes_deployment', 'commiting_to_github']
+    needs: ['build_scan_and_push_the_image', 'sending_slack_notitification', 'changing_the_kubernetes_deployment_and_commit']
     if: failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
