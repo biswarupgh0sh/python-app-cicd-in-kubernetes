@@ -61,10 +61,6 @@ jobs:
         uses: mikefarah/yq@v4.44.3
       - name: Update deployment.yml file
         run: |
-          pwd
-          ls -la
-          cd ..;ls -la
-          cd ..;ls -la
           # Creating the SHA KEY
           SHORT_SHA_KEY=${GITHUB_SHA::10}
           # Update the image tag in the kubernetes deployment yaml file
