@@ -6,7 +6,7 @@ on:
 
 jobs:
   build_image:
-    name: Build the docker image and scan with trivy
+    name: Build the docker image and save in artifacts
     runs-on: ubuntu-latest
     outputs:
       short_sha: ${{ steps.sha.outputs.SHORT_SHA }}
@@ -65,6 +65,7 @@ jobs:
         run: |
           CRITICAL=$(jq '[.Results[].Vulnerabilities[] | select(.Severity=="CRITICAL")] | length' trivy-report.json)
           HIGH=$(jq '[.Results[].Vulnerabilities[] | select(.Severity=="HIGH")] | length' trivy-report.json)
+          MEDIUM=$(jq '[.Results[].Vulnerabilities[] | select(.Severity=="MEDIUM")] | length' trivy-report.json)
           echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
           echo "high=$HIGH" >> $GITHUB_OUTPUT
           echo "medium=$MEDIUM" >> $GITHUB_OUTPUT
@@ -83,7 +84,7 @@ jobs:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     with:
       payload: |
-        text : "GitHub Actions Notification: Trivy scan results"
+        text: ":rocket: *GitHub Actions Notification*"
         blocks:
           - type: section
             text:
@@ -97,14 +98,20 @@ jobs:
                 text: "*Branch:*\n${{ github.ref_name }}"
               - type: mrkdwn
                 text: "*Commit:*\n<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>"
+              - type: mrkdwn
+                text: "*Triggered by:*\n${{ github.actor }}"
+          - type: section
+            text:
+              type: mrkdwn
+              text: ":docker: Docker image built, scanned & pushed\n:kubernetes: Deployment YAML updated\n:rocket: *Ready for ArgoCD sync!*"
           - type: section
             fields:
               - type: mrkdwn
-                text: "*CRITICAL:*\n${{ needs.scan_image.outputs.critical }}"
+                text: "*Trivy CRITICAL:*\n${{ needs.scan_image.outputs.critical }}"
               - type: mrkdwn
-                text: "*HIGH:*\n${{ needs.scan_image.outputs.high }}"
+                text: "*Trivy HIGH:*\n${{ needs.scan_image.outputs.high }}"
               - type: mrkdwn
-                text: "*MEDIUM:*\n${{ needs.scan_image.outputs.medium }}"
+                text: "*Trivy MEDIUM:*\n${{ needs.scan_image.outputs.medium }}"
   pushing_image_to_docker_hub:
     name: Pushing the image to docker hub
     needs: ['sending_slack_notitification', 'build_image']
