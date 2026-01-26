@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: pyapp
-          image: biswarup007/python-app:a47e26f595
+          image: biswarup007/python-app:ee59f6125a
           ports:
             - containerPort: 8000
