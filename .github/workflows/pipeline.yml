@@ -30,7 +30,7 @@ jobs:
       - name: Trivy Image Scan
         uses: aquasecurity/trivy-action@0.24.0
         with:
-          image-ref: biswarup007/python-app:${{ needs.build_image.outputs.short_sha }}
+          image-ref: biswarup007/python-app:${{ steps.sha.outputs.SHORT_SHA_KEY }}
           severity: MEDIUM,HIGH,CRITICAL
           exit-code: 0
   sending_slack_notitification:
