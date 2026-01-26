@@ -63,7 +63,7 @@ jobs:
           echo "high=$HIGH" >> $GITHUB_OUTPUT
 
       - name: Upload Trivy report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: trivy-report
           path: trivy-report.json
