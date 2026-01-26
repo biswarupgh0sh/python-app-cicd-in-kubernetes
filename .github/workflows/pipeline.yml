@@ -37,7 +37,6 @@ jobs:
         with:
             name: python-app-image
             path: python-app.tar
-      
   scan_image:
     needs: build_image
     runs-on: ubuntu-latest
@@ -55,6 +54,19 @@ jobs:
           image-ref: biswarup007/python-app:${{ needs.build_image.outputs.short_sha }}
           severity: MEDIUM,HIGH,CRITICAL
           exit-code: 0
+      - name: Parse Trivy metrics
+        id: trivy_metrics
+        run: |
+          CRITICAL=$(jq '[.Results[].Vulnerabilities[] | select(.Severity=="CRITICAL")] | length' trivy-report.json)
+          HIGH=$(jq '[.Results[].Vulnerabilities[] | select(.Severity=="HIGH")] | length' trivy-report.json)
+          echo "critical=$CRITICAL" >> $GITHUB_OUTPUT
+          echo "high=$HIGH" >> $GITHUB_OUTPUT
+
+      - name: Upload Trivy report
+        uses: actions/upload-artifact@v3
+        with:
+          name: trivy-report
+          path: trivy-report.json
   sending_slack_notitification:
     name: Sending notification
     needs: scan_image
