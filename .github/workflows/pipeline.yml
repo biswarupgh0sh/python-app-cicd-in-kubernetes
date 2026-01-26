@@ -3,11 +3,18 @@ on:
   push:
    branches:
      - main
+
+env:
+  SONAR_PROJECT_KEY: biswarupgh0sh_python-app-cicd-in-kubernetes
      
 jobs:
   sonar_scan:
     name: SonarCloud Scan
     runs-on: ubuntu-latest
+    outputs:
+      bugs: ${{ steps.sonar_metrics.outputs.bugs }}
+      vulnerabilities: ${{ steps.sonar_metrics.outputs.vulnerabilities }}
+      code_smells: ${{ steps.sonar_metrics.outputs.code_smells }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,7 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install jq
-      - name: Official SonarQube Scan
+      - name: SAST with SonarCloud using SonarQube
         uses: SonarSource/sonarqube-scan-action@v7.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -29,7 +36,6 @@ jobs:
           curl -u ${{ secrets.SONAR_TOKEN }}: \
           "https://sonarcloud.io/api/measures/component?component=${{ env.SONAR_PROJECT_KEY }}&metricKeys=bugs,vulnerabilities,code_smells" \
           -o sonar-report.json
-
       - name: Parse SonarCloud metrics
         id: sonar_metrics
         run: |
@@ -39,7 +45,6 @@ jobs:
           echo "bugs=$BUGS" >> $GITHUB_OUTPUT
           echo "vulnerabilities=$VULNERABILITIES" >> $GITHUB_OUTPUT
           echo "code_smells=$CODE_SMELLS" >> $GITHUB_OUTPUT
-
       - name: Upload SonarCloud report
         uses: actions/upload-artifact@v4
         with:
@@ -119,7 +124,7 @@ jobs:
           path: trivy-report.json
   sending_slack_notitification:
     name: Sending notification
-    needs: scan_image
+    needs: ['sonar_scan','build_image','scan_image']
     uses: ./.github/workflows/reusable-slack-notification.yml
     if: always()
     secrets:
