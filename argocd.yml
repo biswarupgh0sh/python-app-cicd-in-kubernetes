@@ -1,0 +1,18 @@
+kind: Application
+apiVersion: argoproj.io/v1alpha1
+metadata:
+  name: python-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/biswarupgh0sh/python-app-cicd-in-kubernetes.git
+    targetRevision: main
+    path: k8s
+  destination:
+    server: http://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
