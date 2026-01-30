@@ -10,7 +10,7 @@ spec:
     targetRevision: main
     path: k8s
   destination:
-    server: http://kubernetes.default.svc
+    server: https://kubernetes.default.svc
     namespace: default
   syncPolicy:
     automated:
