@@ -11,5 +11,5 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 8000
-  type: CLusterIP
+  type: ClusterIP
         # type: LoadBalancer # this for eks
