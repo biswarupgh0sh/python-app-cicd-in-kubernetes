@@ -17,7 +17,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: pyapp
-          image: biswarup007/python-app:0a7af2a3af
+          image: biswarup007/python-app:db22a91684
           ports:
             - containerPort: 8000
           resources:
