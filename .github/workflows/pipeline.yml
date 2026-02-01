@@ -107,7 +107,7 @@ jobs:
         with:
           image-ref: biswarup007/python-app:${{ needs.build_image.outputs.short_sha }}
           severity: MEDIUM,HIGH,CRITICAL
-          exit-code: 0
+          exit-code: 0 # in production this can be turned to 1, now it is 0 to show the entire pipeline
           format: json
           output: trivy-report.json
       - name: Parse Trivy metrics
