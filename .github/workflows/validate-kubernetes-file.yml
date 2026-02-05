@@ -6,6 +6,6 @@ jobs:
     runs-on: ubuntu-slim
     steps:
       - name: Validate Kubernetes Manifests
-        uses: instrumenta/conftest-action@v0.4.0
+        uses: instrumenta/conftest-action@master
         with:
             files: k8s/
