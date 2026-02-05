@@ -5,6 +5,8 @@ jobs:
   check-kubernetes-files:
     runs-on: ubuntu-latest
     steps:
+      - name: Checking out the code
+        uses: actions/checkout@v4
       - name: Validate Kubernetes Manifests
         uses: instrumenta/conftest-action@v0.4.0
         with:
