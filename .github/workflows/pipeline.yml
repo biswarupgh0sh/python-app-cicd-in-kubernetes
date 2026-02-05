@@ -8,9 +8,14 @@ env:
   SONAR_PROJECT_KEY: biswarupgh0sh_python-app-cicd-in-kubernetes
      
 jobs:
+  checking_k8s_manifest:
+    name: Checking the manifest of kubernetes
+    uses: ./.github/workflows/validate-kubernetes-file.yml
+
   sonar_scan:
     name: SonarCloud SAST Scan
     runs-on: ubuntu-latest
+    needs: checking_k8s_manifest
     outputs:
       bugs: ${{ steps.sonar_metrics.outputs.bugs }}
       vulnerabilities: ${{ steps.sonar_metrics.outputs.vulnerabilities }}
@@ -127,7 +132,7 @@ jobs:
           path: trivy-report.json
   sending_slack_notitification:
     name: Sending notification
-    needs: ['sonar_scan','build_image','scan_image']
+    needs: ['checking_k8s_manifest', 'sonar_scan','build_image','scan_image']
     uses: ./.github/workflows/reusable-slack-notification.yml
     if: always() && !failure()
     secrets:
@@ -201,11 +206,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions@noreply"
           git commit -am "updated the deployment.yml file by GitHub Actions" || echo "Already commited the changes"
-          git push origin main      
+          git push origin main
+  checking_k8s_manifest_after_commit:
+    name: Checking the manifests at last
+    needs: changing_the_kubernetes_deployment_and_commit
+    uses: ./.github/workflows/validate-kubernetes-file.yml    
   success_notify:
     name: Sending pipeline success notification
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
+    needs: ['checking_k8s_manifest', 'sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit', 'checking_k8s_manifest_after_commit']
     if: always() && !failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -217,7 +226,7 @@ jobs:
   failure_notify:
     name: Sending pipeline failure notification
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit']
+    needs: ['checking_k8s_manifest', 'sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit', 'checking_k8s_manifest_after_commit']
     if: failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

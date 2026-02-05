@@ -1,0 +1,11 @@
+name: Validating kubernetes manifest file
+on:
+  workflow_call:
+jobs:
+  check-kubernetes-files:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Validate Kubernetes Manifests
+        uses: instrumenta/conftest-action@v0.4.0
+        with:
+            files: k8s/
