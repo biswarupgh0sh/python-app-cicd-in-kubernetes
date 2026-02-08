@@ -48,7 +48,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report.sarif
-          path: report
+          path: reports
   git_leaks_scan:
     name: Checking for leaking credentials
     runs-on: ubuntu-slim
