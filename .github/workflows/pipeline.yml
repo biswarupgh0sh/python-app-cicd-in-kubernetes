@@ -16,6 +16,34 @@ jobs:
   checking_k8s_manifest:
     name: Checking the manifest of kubernetes
     uses: ./.github/workflows/validate-kubernetes-file.yml
+  owasp_dependency_check:
+    name: Checking for vulnerable dependency
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run OWASP dependency check
+        uses: dependency-check/Dependency-Chec_Action@v1.1.0
+        with:
+          project: ${{ env.SONAR_PROJECT_KEY }}
+          path: "."
+          format: "ALL"
+          out: "dependency-check-report"
+          args: >
+            --failOnCVSS 7
+            --enableRetired
+            --nvdApiKey ${{ secrets.NVD_API_KEY }}
+
+      - name: Upload SARIF to Github Sec
+        uses: github/codeql-action/upload-sarif@v3
+        with: 
+          sarif_file: dependency-check-report/dependency-check-report.sarif
+
+      - name: Upload HTML report
+        uses: actions/upload-artifacts@v4
+        with:
+          name: dependency-check-report
+          path: dependency-check-report
   git_leaks_scan:
     name: Checking for leaking credentials
     runs-on: ubuntu-slim
@@ -164,7 +192,7 @@ jobs:
           path: trivy-report.json
   sending_slack_notitification:
     name: Sending notification
-    needs: ['checking_k8s_manifest', 'git_leaks_scan', 'sonar_scan','build_image','scan_image']
+    needs: ['checking_k8s_manifest', 'git_leaks_scan', 'owasp_dependency_check', 'sonar_scan','build_image','scan_image']
     uses: ./.github/workflows/reusable-slack-notification.yml
     if: always() && !failure()
     secrets:
