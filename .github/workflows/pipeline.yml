@@ -3,6 +3,11 @@ on:
   push:
    branches:
      - main
+  
+permissions:
+  contents: read
+  security-events: write
+
 
 env:
   SONAR_PROJECT_KEY: biswarupgh0sh_python-app-cicd-in-kubernetes
@@ -11,6 +16,20 @@ jobs:
   checking_k8s_manifest:
     name: Checking the manifest of kubernetes
     uses: ./.github/workflows/validate-kubernetes-file.yml
+  git_leaks_scan:
+    name: Checking for leaking credentials
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout code (full history for gitleaks)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   sonar_scan:
     name: SonarCloud SAST Scan
     runs-on: ubuntu-latest
@@ -65,7 +84,7 @@ jobs:
   build_image:
     name: Build the docker image and save in artifacts
     runs-on: ubuntu-latest
-    needs: ['sonar_scan', 'checking_k8s_manifest']
+    needs: ['sonar_scan', 'checking_k8s_manifest', 'git_leaks_scan']
     outputs:
       short_sha: ${{ steps.sha.outputs.SHORT_SHA }}
     steps:
