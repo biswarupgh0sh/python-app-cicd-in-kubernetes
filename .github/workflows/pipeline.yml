@@ -5,7 +5,7 @@ on:
      - main
   
 permissions:
-  contents: write
+  contents: read
   security-events: write
 
 
@@ -26,8 +26,6 @@ jobs:
           fetch-depth: 0
       - name: Run Gitleaks
         uses: gitleaks/gitleaks-action@v2
-        with:
-          fail: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   sonar_scan:
@@ -166,7 +164,7 @@ jobs:
           path: trivy-report.json
   sending_slack_notitification:
     name: Sending notification
-    needs: ['checking_k8s_manifest', 'sonar_scan','build_image','scan_image']
+    needs: ['checking_k8s_manifest', 'git_leaks_scan', 'sonar_scan','build_image','scan_image']
     uses: ./.github/workflows/reusable-slack-notification.yml
     if: always() && !failure()
     secrets:
@@ -224,6 +222,8 @@ jobs:
     name: Changing the kubernetes deployment file
     needs: pushing_image_to_docker_hub
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checking out the code
         uses: actions/checkout@v4
@@ -248,7 +248,7 @@ jobs:
   success_notify:
     name: Sending pipeline success notification
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['checking_k8s_manifest', 'sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit', 'checking_k8s_manifest_after_commit']
+    needs: ['checking_k8s_manifest', 'git_leaks_scan', 'sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit', 'checking_k8s_manifest_after_commit']
     if: always() && !failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -260,7 +260,7 @@ jobs:
   failure_notify:
     name: Sending pipeline failure notification
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['checking_k8s_manifest', 'sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit', 'checking_k8s_manifest_after_commit']
+    needs: ['checking_k8s_manifest', 'git_leaks_scan', 'sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit', 'checking_k8s_manifest_after_commit']
     if: failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
