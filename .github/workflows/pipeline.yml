@@ -18,12 +18,12 @@ jobs:
     uses: ./.github/workflows/validate-kubernetes-file.yml
   owasp_dependency_check:
     name: Checking for vulnerable dependency
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Run OWASP dependency check
-        uses: dependency-check/Dependency-Chec_Action@v1.1.0
+        uses: dependency-check/Dependency-Check_Action@v1.1.0
         with:
           project: ${{ env.SONAR_PROJECT_KEY }}
           path: "."
@@ -40,7 +40,7 @@ jobs:
           sarif_file: dependency-check-report/dependency-check-report.sarif
 
       - name: Upload HTML report
-        uses: actions/upload-artifacts@v4
+        uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
           path: dependency-check-report
@@ -110,7 +110,7 @@ jobs:
   build_image:
     name: Build the docker image and save in artifacts
     runs-on: ubuntu-latest
-    needs: ['sonar_scan', 'checking_k8s_manifest', 'git_leaks_scan']
+    needs: ['sonar_scan', 'checking_k8s_manifest','owasp_dependency_check', 'git_leaks_scan']
     outputs:
       short_sha: ${{ steps.sha.outputs.SHORT_SHA }}
     steps:
