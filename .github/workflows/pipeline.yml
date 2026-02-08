@@ -34,6 +34,11 @@ jobs:
             --nvdApiKey ${{ secrets.NVD_API_KEY }}
             --out dependency-check-report
 
+      - name: Debug – list generated files
+        run: |
+          echo "Listing dependency-check-report directory:"
+          ls -R dependency-check-report || echo "Report directory not found"
+
       - name: Upload SARIF to Github Sec
         uses: github/codeql-action/upload-sarif@v4
         with: 
