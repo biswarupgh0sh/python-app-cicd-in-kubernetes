@@ -261,7 +261,7 @@ jobs:
   success_notify:
     name: Sending pipeline success notification
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['checking_k8s_manifest', 'git_leaks_scan', 'sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit', 'checking_k8s_manifest_after_commit']
+    needs: ['checking_k8s_manifest', 'owasp_dependency_check', 'git_leaks_scan', 'sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit', 'checking_k8s_manifest_after_commit']
     if: always() && !failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -273,7 +273,7 @@ jobs:
   failure_notify:
     name: Sending pipeline failure notification
     uses: ./.github/workflows/reusable-slack-notification.yml
-    needs: ['checking_k8s_manifest', 'git_leaks_scan', 'sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit', 'checking_k8s_manifest_after_commit']
+    needs: ['checking_k8s_manifest', 'owasp_dependency_check', 'git_leaks_scan', 'sonar_scan', 'build_image', 'scan_image','sending_slack_notitification', 'pushing_image_to_docker_hub', 'changing_the_kubernetes_deployment_and_commit', 'checking_k8s_manifest_after_commit']
     if: failure()
     secrets:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
