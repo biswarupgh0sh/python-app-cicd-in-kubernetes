@@ -27,7 +27,7 @@ jobs:
         with:
           project: ${{ env.SONAR_PROJECT_KEY }}
           path: "."
-          format: SARIF,HTML
+          format: ALL
           args: >
             --failOnCVSS 7
             --enableRetired
