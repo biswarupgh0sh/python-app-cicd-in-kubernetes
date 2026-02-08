@@ -33,13 +33,7 @@ jobs:
             --enableRetired
             --nvdApiKey ${{ secrets.NVD_API_KEY }}
             --out dependency-check-report
-      - name: debugging
-        run: |
-          ls
-          pwd
-        
-
-      - name: Upload SARIF to Github Sec
+      - name: Upload SARIF to Github Security
         uses: github/codeql-action/upload-sarif@v4
         with: 
           sarif_file: reports/dependency-check-report.sarif
@@ -71,22 +65,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-      - name: Cache pip dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install jq
       - name: SAST with SonarCloud using SonarQube
         uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
@@ -98,6 +76,8 @@ jobs:
           curl -u "$SONAR_TOKEN:" \
           "https://sonarcloud.io/api/measures/component?component=${{ env.SONAR_PROJECT_KEY }}&metricKeys=bugs,vulnerabilities,code_smells" \
           -o sonar-report.json
+      - name: Installing yq
+        uses: mikefarah/yq@v4.44.3
       - name: Parse SonarCloud metrics
         id: sonar_metrics
         run: |
