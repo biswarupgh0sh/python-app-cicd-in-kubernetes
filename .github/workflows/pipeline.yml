@@ -33,6 +33,11 @@ jobs:
             --enableRetired
             --nvdApiKey ${{ secrets.NVD_API_KEY }}
             --out dependency-check-report
+      - name: debugging
+        run: |
+          ls
+          pwd
+        
 
       - name: Upload SARIF to Github Sec
         uses: github/codeql-action/upload-sarif@v4
